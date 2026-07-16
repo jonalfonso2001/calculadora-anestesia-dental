@@ -1,36 +1,62 @@
 # calculadora-anestesia-dental
-Scrip interactivo en Python para el calculo de dosificacion de anestesicos locales (lidocaina)
+Scrip interactivo en Python para el calculo de dosificacion de anestesicos locales
+#!/usr/bin/env python3
+"""
+Calculadora de dosis de lidocaína 2% (mejorada con validaciones).
+"""
+
+def pedir_opcion_paciente():
+    while True:
+        print("Tipo de paciente:")
+        print("1. Adulto")
+        print("2. Pediátrico (Niño)")
+        opcion = input("Selecciona una opción (1 o 2): ").strip()
+        if opcion in ("1", "2"):
+            return opcion
+        print("Opción no válida. Intenta de nuevo.\n")
+
+def pedir_peso():
+    while True:
+        raw = input("Ingresa el peso del paciente (kg): ").strip().replace(",", ".")
+        try:
+            peso = float(raw)
+            if peso <= 0:
+                print("El peso debe ser un número positivo. Intenta de nuevo.")
+                continue
+            return peso
+        except ValueError:
+            print("Entrada inválida. Ingresa un número (por ejemplo: 70 o 12.5).")
+
+def pedir_compromiso_cardio():
+    while True:
+        resp = input("\n¿El paciente presenta compromiso cardiovascular? (Hipertensión, cardiopatías congénitas, etc.) Responde (SI / NO): ").strip().upper()
+        if resp in ("SI", "S"):
+            return True
+        if resp in ("NO", "N"):
+            return False
+        print("Respuesta no válida. Usa SI o NO.")
+
 def calcular_anestesia_completa():
     print("==================================================")
     print("  SISTEMA DE DOSIFICACIÓN CLÍNICA: LIDOCAÍNA 2%  ")
     print("==================================================")
     
-    # 1. Selección del tipo de paciente
-    print("Tipo de paciente:")
-    print("1. Adulto")
-    print("2. Pediátrico (Niño)")
-    opcion_paciente = input("Selecciona una opción (1 o 2): ").strip()
+    opcion_paciente = pedir_opcion_paciente()
+    peso = pedir_peso()
+    compromiso_cardio = pedir_compromiso_cardio()
     
-    if opcion_paciente not in ["1", "2"]:
-        print("Opción no válida. Reinicia el programa.")
-        return
-
-    # 2. Datos básicos del paciente
-    peso = float(input("Ingresa el peso del paciente (kg): "))
+    # Parámetros
+    mg_por_cartucho = 36.0  # mg por cartucho (1.8 mL al 2% = 36 mg)
     
-    print("\n¿El paciente presenta compromiso cardiovascular?")
-    print("(Hipertensión, cardiopatías congénitas, etc.)")
-    compromiso_cardio = input("Responde (SI / NO): ").strip().upper()
+    # Inicializar variables
+    dosis_final_mg = 0.0
+    cartuchos_maximos = 0.0
+    nota = ""
     
-    # 3. Parámetros fijos
-    mg_por_cartucho = 36
-    
-    # 4. Lógica Clínica según el Tipo de Paciente
     if opcion_paciente == "1":
-        # --- LÓGICA PARA ADULTOS ---
-        limite_absoluto_adulto = 300  # Máximo 300 mg
-        
-        if compromiso_cardio == "SI":
+        # Adulto
+        limite_absoluto_adulto = 300.0  # mg
+        if compromiso_cardio:
             cartuchos_maximos = 2.0
             dosis_final_mg = cartuchos_maximos * mg_por_cartucho
             nota = "ALERTA: Adulto con compromiso cardiovascular. Dosis limitada por vasoconstrictor (Máx. 2 cartuchos / 0.04 mg epinefrina)."
@@ -43,13 +69,10 @@ def calcular_anestesia_completa():
                 dosis_final_mg = dosis_por_peso
                 nota = "Nota: Adulto sano. Dosis calculada con base en el peso corporal."
             cartuchos_maximos = dosis_final_mg / mg_por_cartucho
-
     else:
-        # --- LÓGICA PEDIÁTRICA ---
-        limite_absoluto_nino = 150  # Máximo absoluto estricto en niños (150 mg)
-        
-        if compromiso_cardio == "SI":
-            # En niños con cardiopatías la dosis de vasoconstrictor es extremadamente baja
+        # Pediátrico
+        limite_absoluto_nino = 150.0  # mg
+        if compromiso_cardio:
             cartuchos_maximos = 1.0
             dosis_final_mg = cartuchos_maximos * mg_por_cartucho
             nota = "ALERTA MÁXIMA: Paciente pediátrico con compromiso cardiovascular. Dosis restringida a 1 cartucho por seguridad."
@@ -63,17 +86,21 @@ def calcular_anestesia_completa():
                 nota = "Nota: Paciente pediátrico. Dosis calculada con base en el peso corporal."
             cartuchos_maximos = dosis_final_mg / mg_por_cartucho
 
-    # 5. Despliegue de resultados médicos
+    # Presentación de resultados
+    cartuchos_display = round(cartuchos_maximos, 1)
+    cartuchos_completos = int(cartuchos_maximos)  # número entero de cartuchos completos (si hace falta)
+    
     print(f"\n==================================================")
     print(f"               REPORTE DE SEGURIDAD               ")
     print(f"==================================================")
     print(f"- Tipo de Paciente: {'Adulto' if opcion_paciente == '1' else 'Pediátrico'}")
-    print(f"- Peso registrado: {peso} kg")
-    print(f"- Dosis máxima permitida: {round(dosis_final_mg, 2)} mg")
-    print(f"- Cantidad máxima segura: {round(cartuchos_maximos, 1)} cartuchos.")
+    print(f"- Peso registrado: {peso:.2f} kg")
+    print(f"- Dosis máxima permitida: {dosis_final_mg:.2f} mg")
+    print(f"- Cantidad máxima segura (aprox.): {cartuchos_display} cartucho(s)")
+    print(f"- Cartuchos completos (enteros): {cartuchos_completos} cartucho(s)")
     print(f"--------------------------------------------------")
     print(f"{nota}")
     print(f"==================================================")
 
-# Ejecutar el programa
-calcular_anestesia_completa()
+if __name__ == "__main__":
+    calcular_anestesia_completa()
